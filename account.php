@@ -1,5 +1,46 @@
-<?php include ('head.php');?>
-<?php include ('foot.php');?>
+<<?php
+session_start();
+
+include('head.php');
+include('foot.php');
+
+$servername = "localhost";
+$username = "root";
+$db_password = "";
+$dbname = "bank";
+$conn = new mysqli($servername, $username, $db_password, $dbname);
+
+if ($conn->connect_error) {
+  die("Connection failed: " . $conn->connect_error);
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+  $action = $_POST["dd"];
+  $amount = $_POST["inputField"];
+
+  $sql = "INSERT INTO `tbl_account` (`cr`, `dr`, `bal`) VALUES (0, 0, 0)";
+  
+  if ($conn->query($sql) === TRUE) {
+    $last_id = $conn->insert_id;
+    // Update the newly inserted row based on the selected action and amount
+    if ($action == "option1") {
+      $update_sql = "UPDATE `tbl_account` SET `cr` = `cr` + $amount, `bal` = `bal` + $amount WHERE `ac_id` = $last_id";
+    } else {
+      $update_sql = "UPDATE `tbl_account` SET `dr` = `dr` + $amount, `bal` = `bal` - $amount WHERE `ac_id` = $last_id";
+    }
+
+    if ($conn->query($update_sql) === TRUE) {
+      $_SESSION['success_message'] = "Record added successfully";
+    } else {
+      $_SESSION['error_message'] = "Error updating record: " . $conn->error;
+    }
+  } else {
+    $_SESSION['error_message'] = "Error inserting record: " . $conn->error;
+  }
+}
+
+$conn->close();
+?>
 
 <!DOCTYPE html>
 <html>
@@ -63,17 +104,31 @@ button:hover {
 
 <h1>Account Details</h1>
 
-  <form>
-    <div class="form-group">
-      <label for="dd">Action:</label>
-      <select id="dd" name="dd">
-        <option value="option1">Deposit</option>
-        <option value="option2">Withdrawl</option>
-      </select>
-      <label for="inputField">Enter Amount:</label>
-      <input type="text" id="inputField" name="inputField" placeholder=""><br></br>
-    <button type="sub">Submit</button>
-  </form><br></br>
+<?php
+// Display success or error messages if they exist in the session
+if (isset($_SESSION['success_message'])) {
+  echo '<div style="color: green;">' . $_SESSION['success_message'] . '</div>';
+  unset($_SESSION['success_message']); // Clear the session variable
+}
+
+if (isset($_SESSION['error_message'])) {
+  echo '<div style="color: red;">' . $_SESSION['error_message'] . '</div>';
+  unset($_SESSION['error_message']); // Clear the session variable
+}
+?>
+
+<form method="post">
+  <div class="form-group">
+    <label for="dd">Action:</label>
+    <select id="dd" name="dd">
+      <option value="option1">Deposit</option>
+      <option value="option2">Withdrawal</option>
+    </select>
+    <label for="inputField">Enter Amount:</label>
+    <input type="text" id="inputField" name="inputField" placeholder=""><br></br>
+    <button type="submit">Submit</button>
+  </div>
+</form><br></br>
 
 <table id="users">
   <tr>
@@ -84,7 +139,6 @@ button:hover {
     <th>Edit</th>
     <th>Delete</th>
   </tr>
-  </div>
   
 <?php
 $servername = "localhost";
@@ -97,32 +151,10 @@ if ($conn->connect_error) {
   die("Connection failed: " . $conn->connect_error);
 }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  $action = $_POST["dd"];
-  $amount = $_POST["inputField"];
-
-  $sql = "INSERT INTO `tbl_account`(`cr`, `dr`, `bal`) VALUES ('".$cr."','".$dr."','".$bal."')";
-  
-  if ($conn->query($sql) === TRUE) {
-    $last_id = $conn->insert_id;
-  
-    if ($action == "option1") {
-      $update_sql = "UPDATE `tbl_account` SET `cr` = $amount, `bal` = `bal` + $amount WHERE `ac_id` = $last_id";
-    } else {
-      $update_sql = "UPDATE `tbl_account` SET `dr` = $amount, `bal` = `bal` - $amount WHERE `ac_id` = $last_id";
-    }
-
-    if ($conn->query($update_sql) === TRUE) {
-      echo "Record added successfully";
-    } else {
-      echo "Error updating record: " . $conn->error;
-    }
-  } else {
-    echo "Error inserting record: " . $conn->error;
-  }
+$sql = "SELECT `ac_id`, `cr`, `dr`, `bal`, `u_id` FROM `tbl_account` WHERE 1";
+$result = $conn->query($sql);
 
 if ($result->num_rows > 0) {
-  
   
   while($row = $result->fetch_assoc()) {
     echo "<tr>";
@@ -130,17 +162,16 @@ if ($result->num_rows > 0) {
     echo "<td>".$row["cr"]."</td>";
     echo "<td>".$row["dr"]."</td>";
     echo "<td>".$row["bal"]."</td>";
-    echo "<td><a href='edit.php?id=".$row['ac_id']."'><button>Edit</button></a></td>";
-    echo "<td><a href='del.php?id=".$row['ac_id']."'><button>Delete</button></a></td>";
+    echo "<td><a href='edit2.php?id=".$row['ac_id']."'><button>Edit</button></a></td>";
+    echo "<td><a href='del2.php?id=".$row['ac_id']."'><button>Delete</button></a></td>";
     echo "</tr>";
   }
 } else {
   echo "<tr><td colspan='4'>0 results</td></tr>";
 }
-}
 $conn->close();
 ?>
-
 </table>
+
 </body>
 </html>
