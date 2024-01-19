@@ -1,3 +1,6 @@
+<?php include ('head.php');?>
+<?php include ('foot.php');?>
+
 <html>
 <head>
 <style>
