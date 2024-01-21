@@ -2,6 +2,61 @@
 <html>
 <head>
 <style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+
+  h2 {
+    text-align: center;
+    color: #333;
+  }
+
+  p {
+    text-align: center;
+    color: #555;
+  }
+
+  form {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    margin-top: 20px;
+  }
+
+  input[type="text"],
+  textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    box-sizing: border-box;
+  }
+
+  input[type="submit"] {
+    display: block;
+    width: 50%; 
+    margin: 0 auto;
+    padding: 10px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  input[type="submit"]:hover {
+    background-color: #45a049;
+  }
+
   .error {
     color: #FF0000;
     font-size: 14px;
@@ -94,6 +149,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 if ($conn->query($sql) === TRUE) {
+  header('Location:view.php');
   echo "Updated Successfully.";
 } else {
   $updateErr = "Data isn't updated.";
@@ -114,10 +170,10 @@ function test_input($data) {
   }
 ?>
 
-<h2>Update Data</h2>
-<p><span class="error">* required field</span></p>
+<h2>Update Data</h2><br></br>
+<p><span class="error">* required field</span></p><br></br>
 <form method="post" action="edit.php?id=<?php echo $_GET['id']; ?>">
- 
+ <div class="form">
   Name: <input type="text" name="name">
   <span class="error">* <?php echo $nameErr;?></span>
   <br><br>
@@ -130,6 +186,7 @@ function test_input($data) {
   
   <input type="submit" name="submit" value="Update">  
 </form>
+</div>
 
 
 </body>

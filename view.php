@@ -1,5 +1,5 @@
 <?php include ('head.php');?>
-<?php include ('foot.php');?>
+
 
 <!DOCTYPE html>
 <html>
@@ -77,5 +77,6 @@ if ($result->num_rows > 0) {
 $conn->close();
 ?>
 </table>
+<?php include ('foot.php');?>
 </body>
 </html>

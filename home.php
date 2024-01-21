@@ -1,5 +1,5 @@
 <?php include ('head.php');?>
-<?php include ('foot.php');?>
+
 
 
 <html>
@@ -41,3 +41,4 @@ h1 {
 
 </body>
 </html>
+<?php include ('foot.php');?>

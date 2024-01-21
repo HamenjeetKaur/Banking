@@ -13,7 +13,7 @@ if ($conn->connect_error) {
   die("Connection failed: " . $conn->connect_error);
 }
 
-$sql = "DELETE FROM `tbl_user` WHERE id=".$_GET['id'];
+$sql = "DELETE FROM tbl_user WHERE u_id=".$_GET['id'];
 $result = $conn->query($sql);
 
 header('Location:view.php');

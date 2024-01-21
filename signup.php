@@ -1,5 +1,5 @@
 <?php include ('head.php');?>
-<?php include ('foot.php');?>
+
 
 <html>
 <head>
@@ -144,7 +144,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 
 function test_input($data){
-  $data= trim(data);
+  $data= trim($data);
   $data= stripslashes($data);
   $data= htmlspecialchars($data);
   return $data;
@@ -176,3 +176,4 @@ function test_input($data){
 
 </body>
 </html>
+<?php include ('foot.php');?>

@@ -1,5 +1,5 @@
 <?php include ('head.php');?>
-<?php include ('foot.php');?>
+
 
 <html>
 <head>
@@ -85,7 +85,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       $passwordErr = "Invalid Password";
     }
   }
-
+}
   if ($valid) {
     $servername = "localhost";
     $username = "root";
@@ -94,26 +94,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $conn = mysqli_connect($servername, $username, $db_password, $dbname);
     if (!$conn) {
-      die("Connection failed: " . mysqli_connect_error());
+        die("Connection failed: " . mysqli_connect_error());
     }
 
+    if ($_SERVER["REQUEST_METHOD"] == "POST") {
+        $email = $_POST['email'];
+        $password = $_POST['password'];
 
-    $sql = "SELECT * FROM `tbl_user` WHERE email = '$email' AND password = '$password'";
+        $stmt = mysqli_prepare($conn, "SELECT u_id FROM tbl_user WHERE email = ? AND password = ?");
+        mysqli_stmt_bind_param($stmt, "ss", $email, $password);
 
-    $result = $conn->query($sql);
+        mysqli_stmt_execute($stmt);
 
-    if ($result->num_rows > 0) {
-      while($row = $result->fetch_assoc()) {
+        $result = mysqli_stmt_get_result($stmt);
 
-        header('Location:home.php');
-      }
-    } else {
-      echo "Invalid Email or Password";
+        if ($row = mysqli_fetch_assoc($result)) {
+            session_start();
+            $_SESSION['u_id'] = $row['u_id']; // Set the user ID from the result set
+            header("Location: home.php");
+            exit();
+        } else {
+            $errorMessage = "Invalid email or password. Please try again.";
+        }
+
+        mysqli_stmt_close($stmt);
     }
-    $conn->close();
-
-
- }
 }
 
 
@@ -140,6 +145,7 @@ return $data;
   <input type="submit" name="submit" value="Submit">  
 </form>
 
-
+<?php include ('foot.php');?>
 </body>
 </html>
+

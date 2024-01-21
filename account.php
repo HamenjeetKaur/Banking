@@ -1,8 +1,7 @@
-<<?php
+<?php
 session_start();
 
 include('head.php');
-include('foot.php');
 
 $servername = "localhost";
 $username = "root";
@@ -11,32 +10,54 @@ $dbname = "bank";
 $conn = new mysqli($servername, $username, $db_password, $dbname);
 
 if ($conn->connect_error) {
-  die("Connection failed: " . $conn->connect_error);
+    die("Connection failed: " . $conn->connect_error);
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  $action = $_POST["dd"];
-  $amount = $_POST["inputField"];
+    $action = $_POST["dd"];
+    $amount = $_POST["inputField"];
 
-  $sql = "INSERT INTO `tbl_account` (`cr`, `dr`, `bal`) VALUES (0, 0, 0)";
+    $userId = $_SESSION['u_id'];
   
-  if ($conn->query($sql) === TRUE) {
-    $last_id = $conn->insert_id;
-    // Update the newly inserted row based on the selected action and amount
+    $getLatestBalance = mysqli_prepare($conn, "SELECT balance FROM tbl_acc WHERE u_id = ? ORDER BY ac_id DESC LIMIT 1");
+    mysqli_stmt_bind_param($getLatestBalance, "d", $userId);
+    mysqli_stmt_execute($getLatestBalance);
+    mysqli_stmt_bind_result($getLatestBalance, $currentBalance);
+    mysqli_stmt_fetch($getLatestBalance);
+    mysqli_stmt_close($getLatestBalance);
+
     if ($action == "option1") {
-      $update_sql = "UPDATE `tbl_account` SET `cr` = `cr` + $amount, `bal` = `bal` + $amount WHERE `ac_id` = $last_id";
+        $newBalance = $currentBalance + $amount;
+        $update_sql = "UPDATE tbl_acc SET balance = ? WHERE ac_id = ?";
+        $transactionType = "Credit";
     } else {
-      $update_sql = "UPDATE `tbl_account` SET `dr` = `dr` + $amount, `bal` = `bal` - $amount WHERE `ac_id` = $last_id";
+        if ($currentBalance >= $amount) {
+            $newBalance = $currentBalance - $amount;
+            $update_sql = "UPDATE tbl_acc SET balance = ? WHERE ac_id = ?";
+            $transactionType = "Debit";
+        } else {
+            $_SESSION['error_message'] = "Insufficient balance for withdrawal.";
+            header('Location: account.php');
+            exit;
+        }
     }
 
-    if ($conn->query($update_sql) === TRUE) {
-      $_SESSION['success_message'] = "Record added successfully";
+    $update_stmt = mysqli_prepare($conn, $update_sql);
+    mysqli_stmt_bind_param($update_stmt, "di", $newBalance, $row["ac_id"]);
+
+    if (mysqli_stmt_execute($update_stmt)) {
+        $insertTransaction = mysqli_prepare($conn, "INSERT INTO tbl_acc (u_id, action, amount, balance) VALUES (?, ?, ?, ?)");
+        mysqli_stmt_bind_param($insertTransaction, "issd", $userId, $transactionType, $amount, $newBalance);
+        mysqli_stmt_execute($insertTransaction);
+        mysqli_stmt_close($insertTransaction);
+
+        $_SESSION['success_message'] = "Transaction successful.";
     } else {
-      $_SESSION['error_message'] = "Error updating record: " . $conn->error;
+        $_SESSION['error_message'] = "Error updating record: " . $conn->error;
     }
-  } else {
-    $_SESSION['error_message'] = "Error inserting record: " . $conn->error;
-  }
+
+    header('Location: account.php');
+    exit;
 }
 
 $conn->close();
@@ -105,15 +126,15 @@ button:hover {
 <h1>Account Details</h1>
 
 <?php
-// Display success or error messages if they exist in the session
+
 if (isset($_SESSION['success_message'])) {
   echo '<div style="color: green;">' . $_SESSION['success_message'] . '</div>';
-  unset($_SESSION['success_message']); // Clear the session variable
+  unset($_SESSION['success_message']);
 }
 
 if (isset($_SESSION['error_message'])) {
   echo '<div style="color: red;">' . $_SESSION['error_message'] . '</div>';
-  unset($_SESSION['error_message']); // Clear the session variable
+  unset($_SESSION['error_message']); 
 }
 ?>
 
@@ -133,11 +154,10 @@ if (isset($_SESSION['error_message'])) {
 <table id="users">
   <tr>
     <th>Id</th>
-    <th>Credit</th>
-    <th>Debit</th>
+    <th>Action</th>
+    <th>Amount</th>
     <th>Balance</th>
-    <th>Edit</th>
-    <th>Delete</th>
+
   </tr>
   
 <?php
@@ -151,27 +171,28 @@ if ($conn->connect_error) {
   die("Connection failed: " . $conn->connect_error);
 }
 
-$sql = "SELECT `ac_id`, `cr`, `dr`, `bal`, `u_id` FROM `tbl_account` WHERE 1";
-$result = $conn->query($sql);
+$sql = "SELECT `ac_id`, `action`, `amount`, `balance` FROM `tbl_acc` WHERE u_id = ? ORDER BY ac_id DESC";
+$getTransactions = mysqli_prepare($conn, $sql);
+mysqli_stmt_bind_param($getTransactions, "i", $_SESSION['u_id']);
+mysqli_stmt_execute($getTransactions);
+$result = mysqli_stmt_get_result($getTransactions);
 
 if ($result->num_rows > 0) {
-  
-  while($row = $result->fetch_assoc()) {
-    echo "<tr>";
-    echo "<td>".$row["ac_id"]."</td>";
-    echo "<td>".$row["cr"]."</td>";
-    echo "<td>".$row["dr"]."</td>";
-    echo "<td>".$row["bal"]."</td>";
-    echo "<td><a href='edit2.php?id=".$row['ac_id']."'><button>Edit</button></a></td>";
-    echo "<td><a href='del2.php?id=".$row['ac_id']."'><button>Delete</button></a></td>";
-    echo "</tr>";
-  }
+    while ($row = $result->fetch_assoc()) {
+        echo "<tr>";
+        echo "<td>" . $row["ac_id"] . "</td>";
+        echo "<td>" . $row["action"] . "</td>";
+        echo "<td>" . $row["amount"] . "</td>";
+        echo "<td>" . $row["balance"] . "</td>";
+        echo "</tr>";
+    }
 } else {
-  echo "<tr><td colspan='4'>0 results</td></tr>";
+    echo "<tr><td colspan='4'>0 results</td></tr>";
 }
-$conn->close();
+
+mysqli_stmt_close($getTransactions);
 ?>
 </table>
-
+<?php include ('foot.php');?>
 </body>
 </html>
